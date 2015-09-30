@@ -1,0 +1,72 @@
+<html ng-app="countryApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Angular.js Example</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.10/angular.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.10/angular-route.min.js"></script>
+    <script>
+      var countryApp = angular.module('countryApp', ['ngRoute']);
+
+      // routing set up to allow for a list if just #/ or a detail page if #/COUNTRYNAME
+      countryApp.config(function($routeProvider) {
+        $routeProvider.
+          when('/', {
+            templateUrl: 'country-list.html',
+            controller: 'CountryListCtrl'
+          }).
+          when('/:countryName', {
+            templateUrl: 'country-detail.html',
+            controller: 'CountryDetailCtrl'
+          }).
+          otherwise({
+            redirectTo: '/'
+          })
+      });
+
+      countryApp.factory('countries', function($http) {
+
+        var cachedData;
+
+        function getData(callback){
+          $http({
+            method: 'GET',
+            url: 'countries.json',
+            cache: true
+          }).success(callback);
+        }
+
+        return {
+          list: getData,
+          find: function(name, callback) {
+            getData(function(data) {
+              var country = data.filter(function(entry){ //TODO look into how filter works deper
+                return entry.name === name; 
+              })[0];
+              callback(country)
+            })
+          }
+        };
+      });
+
+      countryApp.controller('CountryListCtrl', function ($scope, $http, countries) {
+        countries.list(function(countries) {
+          $scope.countries = countries
+        })
+      });
+
+      countryApp.controller('CountryDetailCtrl', function($scope, $routeParams, $http, countries) {
+          countries.find($routeParams.countryName, function(country){
+            $scope.country = country
+          })
+      });
+
+      // A Small encoding piece to alter structure of the URIs created
+      countryApp.filter('encodeURI', function(){
+        return window.encodeURI;
+      });
+
+    </script>
+  <body>
+    <div ng-view></div>
+  </body>
+</html>
